@@ -7,7 +7,7 @@ import filemini as fm
 from keras.models import load_model
 import matplotlib.pyplot as plt
 from config import *
-from keras.backend import sparse_categorical_crossentropy
+from keras.losses import sparse_categorical_crossentropy
 from scipy.stats import entropy, ks_2samp
 from nltk import ngrams
 import gzip
@@ -18,7 +18,7 @@ import gzip
 def _get_loss(model, dataset_X: np.ndarray, dataset_Y: np.ndarray):
     assert dataset_X.shape[0] == dataset_Y.shape[0]
     predicted_Y = model.predict(dataset_X)
-    losses = np.array(sparse_categorical_crossentropy(target = dataset_Y, output = predicted_Y))
+    losses = np.array(sparse_categorical_crossentropy(y_true=dataset_Y, y_pred=predicted_Y))
     return np.mean(losses)
 
 def get_testset_loss(model, discretized_data: np.ndarray, sample_length: int, time_step_x: int, time_step_y: int):

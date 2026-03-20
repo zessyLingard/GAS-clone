@@ -110,8 +110,54 @@ def sample_sensitivity_evaluation():
             file.close()
 
 
+def evaluate_skype_legit():
+    """
+    Evaluate skype_legit_ipd.csv against the pre-trained vpn.h5 model.
+    No training is performed. Runs a single evaluation (no 4-experiment loop).
+    """
+    # Path to the pre-trained model
+    MODEL_PATH = BIGNET_MODELS_DIRPATH + "vpn.h5"
+    # Legitimate validation data used to compute detection thresholds
+    VALISET_FILENAME = "vpn"
+    # The test file to evaluate
+    TESTSET_FILENAME = "skype_legit_ipd"
+
+    valiset_range = (TRAINSET_SIZE, TRAINSET_SIZE + TESTSET_SIZE)
+    testset_range  = (0, TESTSET_SIZE)
+
+    print("Loading model:", MODEL_PATH)
+    model = load_model(MODEL_PATH)
+
+    # Get discretization parameters from the bignet vpn training run
+    f_median, b_median = fm.get_discretized_parameters(
+        filedir=BIGNET_MANI_DIRPATH, filename="vpn_discretized"
+    )
+
+    # Load validation IPDs (legitimate vpn traffic, held-out portion)
+    print("Loading validation set ...")
+    valiset_ipds = fm.get_raw_ipds(
+        filedir=BIGNET_DATA_DIRPATH, filename=VALISET_FILENAME, row_range=valiset_range
+    )
+
+    # Load test IPDs (skype_legit_ipd)
+    print("Loading test set:", TESTSET_FILENAME)
+    testset_ipds = fm.get_raw_ipds(
+        filedir=LABNET_DATA_DIRPATH, filename=TESTSET_FILENAME, row_range=testset_range
+    )
+
+    print("Running GAS evaluation ...")
+    GAS_test_scores = sample_sensitivity_GAS(
+        model=model,
+        valiset_ipds=valiset_ipds,
+        testset_ipds=testset_ipds,
+        f_median=f_median,
+        b_median=b_median,
+    )
+    print("GAS AUC scores (per sample length):", GAS_test_scores)
+
+
 if __name__ == "__main__":
-    sample_sensitivity_evaluation()
+    evaluate_skype_legit()
 
 
 

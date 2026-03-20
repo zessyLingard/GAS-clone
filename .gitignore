@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+results/
+data/
+decoded/
+*.pyc
