@@ -1,54 +1,40 @@
-import numpy as np
+import os
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
 
-print("[1] Đang đọc dữ liệu thời gian...")
-# Đọc file timestamp, bỏ qua các dòng rỗng nếu có
-with open('data/labnet/mss_ipd.csv', 'r') as f:
-    times = []
-    for line in f:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            times.append(float(line))
-        except ValueError:
-            print(f"Bỏ qua dòng không hợp lệ: {line}")
+print("=" * 60)
+print("PHÂN TÍCH ĐỘNG HỌC FILE DO-H THỰC TẾ")
+print("=" * 60)
 
-print(f"    -> Tổng số gói tin bắt được: {len(times)}")
+# 1. Tải file của bạn
+script_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(script_dir, 'data', 'labnet', 'real_ipds_doH.csv')
+try:
+    df = pd.read_csv(file_path)
+    real_ipds = df['IPDs'].values
+except FileNotFoundError:
+    print(f"Không tìm thấy file tại {file_path}. Vui lòng kiểm tra lại đường dẫn.")
+    real_ipds = np.array([])
 
-# Tính khoảng cách giữa gói sau và gói trước
-times = np.array(times)
-ipds = np.diff(times)
+if len(real_ipds) > 0:
+    # 2. Thống kê cơ bản
+    print(f"Tổng số gói tin (IPDs): {len(real_ipds):,}")
+    print(f"Trễ trung bình (Mean):  {np.mean(real_ipds):.6f} giây")
+    print(f"Trễ lớn nhất (Max):     {np.max(real_ipds):.6f} giây")
+    print("-" * 60)
 
-print("[2] Đang dọn dẹp dữ liệu (Lọc rác vật lý)...")
-# Giữ lại các IPD > 0 (bỏ các gói tin đến cùng 1 lúc do lag) 
-# VÀ giữ các IPD < 5.0 giây (khoảng lặng > 5s là do bạn đi vệ sinh chứ không phải macro-delay tự nhiên)
-clean_ipds = ipds[(ipds > 0.000001) & (ipds < 5.0)]
-
-print(f"    -> Số lượng IPD hợp lệ để đưa vào GAN: {len(clean_ipds)}")
-
-# Lưu ra file CSV cho TimeGAN
-df = pd.DataFrame(clean_ipds, columns=['IPD'])
-df.to_csv('real_ipds_doH.csv', index=False)
-print("[3] Đã lưu thành công ra file: real_ipds_doH.csv")
-
-# ==========================================
-# PHẦN ĂN ĐIỂM BÁO CÁO: VẼ ĐỒ THỊ CDF
-# ==========================================
-print("[4] Đang vẽ đồ thị CDF...")
-sorted_ipds = np.sort(clean_ipds)
-# Tính xác suất tích lũy (từ 0 đến 1)
-yvals = np.arange(len(sorted_ipds)) / float(len(sorted_ipds) - 1)
-
-plt.figure(figsize=(10, 6))
-plt.plot(sorted_ipds, yvals, color='red', linewidth=2)
-
-plt.title("Đường cong Phân phối Tích lũy (CDF) của luồng DoH thực tế")
-plt.xlabel("Thời gian IPD (giây) - Trục X")
-plt.ylabel("Tỷ lệ % gói tin (Xác suất CDF) - Trục Y")
-plt.xscale('log') # Dùng thang Logarit để nhìn rõ cả Micro-burst và Macro-delay
-plt.grid(True, which="both", ls="--")
-
-plt.savefig('doh_cdf_real.png', dpi=300)
-print("    -> Đã lưu biểu đồ thành doh_cdf_real.png. Hãy mang ảnh này đi báo cáo!")
+    # 3. Phân rã theo Percentile (Để tìm vùng Micro-burst)
+    percentiles = [50, 75, 80, 90, 95, 98, 99, 99.5, 99.9, 100]
+    print("BẢNG PERCENTILE (Bao nhiêu % gói tin có độ trễ nhỏ hơn mức này?):")
+    for p in percentiles:
+        val = np.percentile(real_ipds, p)
+        print(f" - {p:5.1f}% gói tin trễ <= {val:.6f} giây")
+    
+    print("-" * 60)
+    
+    # 4. Tìm vị trí % cho các mốc Vật lý mục tiêu (Để tìm vùng Macro-delay)
+    targets = [0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
+    print("BẢNG MỐC VẬT LÝ (Thời gian này nằm ở khúc nào của đồ thị?):")
+    for t in targets:
+        prob = np.mean(real_ipds <= t) * 100
+        print(f" - Mốc {t:.3f} giây tương đương vị trí {prob:.4f}% trên CDF")

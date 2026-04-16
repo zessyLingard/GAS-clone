@@ -38,4 +38,4 @@ def analyze_fast_skype(csv_file, threshold=0.020): # Chỉ quan tâm gói < 20ms
     print(f"dummy_ipd = np.random.uniform({min_fast:.6f}, {max_fast:.6f})")
 
 if __name__ == "__main__":
-    analyze_fast_skype("data/labnet/ssh.csv") # Đổi tên file nếu cần
+    analyze_fast_skype("data/labnet/skype_legit_ipd.csv") # Đổi tên file nếu cần
