@@ -1,73 +1,89 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf
-# ==========================================
-# CẤU HÌNH ĐƯỜNG DẪN FILE CSV CỦA BẠN
-# ==========================================
-REAL_FILE = "data/labnet/real_ipds_doH.csv"      # File gốc
-COVERT_FILE = "data/labnet/vpn_noise_v3.csv"       # File output (đổi tên lại cho khớp với file của bạn)
+import seaborn as sns
 
-def load_data(file_path):
-    print(f"Loading {file_path}...")
-    # Đọc file, xử lý lỗi parse và drop NA
-    df = pd.read_csv(file_path, header=None)
-    data = pd.to_numeric(df.iloc[:, 0], errors='coerce').dropna().values
-    return data
+FILE_PATH = 'data/labnet/timestamps.csv'
 
-def plot_cdf(real_data, covert_data):
-    print("Vẽ biểu đồ CDF...")
-    plt.figure(figsize=(10, 6))
-    
-    # Tính toán CDF cho Real
-    sorted_real = np.sort(real_data)
-    y_real = np.arange(1, len(sorted_real) + 1) / len(sorted_real)
-    plt.plot(sorted_real, y_real, label='Real DoH Traffic', color='blue', linewidth=2)
-    
-    # Tính toán CDF cho Covert
-    sorted_covert = np.sort(covert_data)
-    y_covert = np.arange(1, len(sorted_covert) + 1) / len(sorted_covert)
-    plt.plot(sorted_covert, y_covert, label='Covert Traffic', color='red', linestyle='--', linewidth=2)
-    
-    plt.xlim(0, 1.0) # Zoom vào dải từ 0 đến 1 giây để nhìn rõ vùng PAYLOAD_THRESHOLD (0.10s)
-    plt.title('Cumulative Distribution Function (CDF) Comparison', fontsize=14)
-    plt.xlabel('Inter-Packet Delay (seconds)', fontsize=12)
-    plt.ylabel('Cumulative Probability', fontsize=12)
-    plt.axvline(x=0.10, color='gray', linestyle=':', label='Payload Threshold (0.10s)')
+
+def load_ipd_series(csv_file):
+    """Load IPD data robustly from common column formats."""
+    df = pd.read_csv(csv_file)
+    cols_lower = {c.lower(): c for c in df.columns}
+
+    # Common IPD column names
+    for candidate in ['ipds', 'ipd']:
+        if candidate in cols_lower:
+            series = pd.to_numeric(df[cols_lower[candidate]], errors='coerce').dropna()
+            return series.values
+
+    # If the file stores timestamps, convert to IPD by first difference
+    for candidate in ['timestamps', 'timestamp', 'time', 'ts']:
+        if candidate in cols_lower:
+            ts = pd.to_numeric(df[cols_lower[candidate]], errors='coerce').dropna().values
+            return np.diff(ts)
+
+    # Fallback for one-column files
+    if df.shape[1] == 1:
+        series = pd.to_numeric(df.iloc[:, 0], errors='coerce').dropna()
+        return series.values
+
+    raise ValueError(f"Không xác định được cột IPD/Timestamp trong file: {csv_file}")
+
+def deep_stats_analysis(csv_file):
+    # 1. Load dữ liệu và làm sạch
+    data = load_ipd_series(csv_file)
+    data = data[data > 0] # Loại bỏ giá trị 0 tuyệt đối
+
+    if data.size == 0:
+        print("Không có dữ liệu IPD hợp lệ sau khi làm sạch.")
+        return
+
+    print("="*60)
+    print("📊 THỐNG KÊ CHI TIẾT TOÀN BỘ LUỒNG TRAFFIC (ALL-IN)")
+    print("="*60)
+
+    # 2. Thống kê mô tả
+    stats = {
+        "Tổng số gói": len(data),
+        "Trung bình (Mean)": np.mean(data),
+        "Trung vị (Median)": np.median(data),
+        "Độ lệch chuẩn (Std)": np.std(data),
+        "Nhỏ nhất (Min)": np.min(data),
+        "Lớn nhất (Max)": np.max(data),
+        "Phân vị 75th (P75)": np.percentile(data, 75),
+        "Phân vị 90th (P90)": np.percentile(data, 90),
+        "Phân vị 95th (P95)": np.percentile(data, 95)
+    }
+
+    for k, v in stats.items():
+        if k == "Tổng số gói":
+            print(f"{k:25}: {int(v):,}")
+        else:
+            print(f"{k:25}: {v:.6f} giây")
+
+    # 3. Vẽ biểu đồ
+    plt.figure(figsize=(12, 6))
+
+    # Biểu đồ 1: Histogram với Log-scale (Bắt buộc phải dùng log-scale)
+    plt.subplot(1, 2, 1)
+    sns.histplot(data, bins=100, log_scale=True, kde=True, color='royalblue')
+    plt.axvline(0.1, color='red', linestyle='--', label='Ngưỡng Idle (0.1s)')
+    plt.title("Phân phối IPD (Log-scale)")
+    plt.xlabel("Thời gian (giây) - Log Scale")
+    plt.ylabel("Tần suất")
     plt.legend()
+
+    # Biểu đồ 2: Cumulative Distribution Function (CDF)
+    plt.subplot(1, 2, 2)
+    sns.ecdfplot(data, color='forestgreen')
+    plt.axvline(0.1, color='red', linestyle='--')
+    plt.title("Hàm phân phối tích lũy (CDF)")
+    plt.xlabel("Thời gian (giây)")
+    plt.ylabel("Tỷ lệ tích lũy")
     plt.grid(True, alpha=0.3)
-    plt.savefig('cdf_comparison.png', dpi=300)
-    print("Đã lưu cdf_comparison.png")
-    plt.close()
 
-def plot_autocorrelation(real_data, covert_data, lags=50):
-    print("Vẽ biểu đồ Autocorrelation (ACF)...")
-    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True, sharey=True)
-    
-    # Lấy một sample đủ lớn (ví dụ 10,000 IPDs) để tính ACF tránh tràn RAM
-    sample_size = min(10000, len(real_data), len(covert_data))
-    
-    # ACF cho Real
-    plot_acf(real_data[:sample_size], lags=lags, ax=axes[0], color='blue', title='Autocorrelation: Real DoH Traffic')
-    
-    # ACF cho Covert
-    plot_acf(covert_data[:sample_size], lags=lags, ax=axes[1], color='red', title='Autocorrelation: Covert Traffic')
-    
-    plt.xlabel('Lag (Số gói tin trễ)', fontsize=12)
     plt.tight_layout()
-    plt.savefig('acf_comparison.png', dpi=300)
-    print("Đã lưu acf_comparison.png")
-    plt.close()
+    plt.show()
 
-def main():
-    real_data = load_data(REAL_FILE)
-    covert_data = load_data(COVERT_FILE)
-    
-    print(f"Số lượng IPD - Real: {len(real_data)}, Covert: {len(covert_data)}")
-    
-    plot_cdf(real_data, covert_data)
-    plot_autocorrelation(real_data, covert_data)
-    print("Hoàn tất! Hãy mở 2 ảnh png lên để phân tích.")
-
-if __name__ == "__main__":
-    main()
+deep_stats_analysis(FILE_PATH)
