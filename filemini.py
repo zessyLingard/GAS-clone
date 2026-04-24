@@ -15,19 +15,22 @@ def ipds_window_manipulate(ipds: pd.Series, window: int):
 def get_raw_ipds(filedir: str, filename: str, row_range: tuple = None,
                  window: int = None, value_range: tuple = (1, 99)):
 
-    # This method reads the csv file and returns all the IPDs it contains.
     path = filedir + filename + ".csv"
 
     try:
-        ipds = pd.read_csv(path, encoding="utf-8")["IPDs"].dropna()
+        ipds = pd.read_csv(path, encoding="utf-8")["IPDs"]
     except UnicodeDecodeError:
-        ipds = pd.read_csv(path, encoding="utf-16")["IPDs"].dropna()
+        ipds = pd.read_csv(path, encoding="utf-16")["IPDs"]
+
+    ipds = pd.to_numeric(ipds, errors="coerce")
+    ipds = ipds.dropna().reset_index(drop=True)
 
     if value_range is not None:
         up = ipds.quantile(q=value_range[1] / 100)
         down = ipds.quantile(q=value_range[0] / 100)
-        ipds = ipds[ipds[ipds >= down].index].reset_index(drop=True)
-        ipds = ipds[ipds[ipds <= up].index].reset_index(drop=True)
+
+        # (khuyên sửa luôn cho gọn)
+        ipds = ipds[(ipds >= down) & (ipds <= up)].reset_index(drop=True)
 
     if row_range is not None:
         assert row_range[0] >= 0 and row_range[1] >= 0
