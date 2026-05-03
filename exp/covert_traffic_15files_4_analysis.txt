@@ -1,0 +1,38 @@
+Covert traffic IPD analysis
+Samples: 137700
+
+Descriptive statistics (ms)
+Mean: 40.509608
+Std: 157.775164
+Min: 0.001000
+Q25: 0.037000
+Median: 0.235000
+Q75: 1.779250
+Q95: 400.327586
+Max: 1219.003590
+Lag-1 autocorrelation: -0.050090
+
+Fast-IPD share
+Below 1 ms: 68.83%
+Below 5 ms: 83.78%
+Below 10 ms: 87.88%
+Below 20 ms: 89.95%
+
+Burst analysis below 20.00 ms
+Burst count: 11634
+Mean burst length: 10.65
+Max burst length: 135
+Median burst length: 6.00
+Most common burst lengths: 1x1629, 2x1568, 3x1020, 4x842, 5x723
+
+Most frequent rounded IPDs (6 decimals, ms)
+0.008000 ms: 2490
+0.007000 ms: 2100
+0.003000 ms: 2055
+0.006000 ms: 2025
+0.009000 ms: 1890
+0.004000 ms: 1800
+0.010000 ms: 1740
+0.005000 ms: 1725
+0.011000 ms: 1320
+0.012000 ms: 1035
