@@ -241,55 +241,48 @@ def plot_roc(out, fpr, tpr, auc_value):
     plt.close(fig)
 
 
-def plot_score_hist(out, legit_scores, covert_scores, method_name):
+def plot_score_line(out, legit_scores, covert_scores, method_name):
     BLUE = "#4C72B0"
     ORANGE = "#DD8452"
 
     fig, ax = plt.subplots(figsize=(9.0, 6.0))
 
-    all_scores = pd.concat([legit_scores, covert_scores], ignore_index=True)
-    bins = np.linspace(all_scores.min(), all_scores.max(), 30)
-
-    ax.hist(
-        legit_scores,
-        bins=bins,
-        alpha=0.48,
-        label="Legit VPN traffic",
-        color=BLUE,
-        edgecolor="black",
-        linewidth=0.55,
+    # Sử dụng KDE plot của pandas để vẽ đường phân phối
+    legit_scores.plot.kde(
+        ax=ax, 
+        color=BLUE, 
+        linewidth=2.5, 
+        label="Legit VPN traffic"
     )
-
-    ax.hist(
-        covert_scores,
-        bins=bins,
-        alpha=0.48,
-        label=method_name,
-        color=ORANGE,
-        edgecolor="black",
-        linewidth=0.55,
+    
+    covert_scores.plot.kde(
+        ax=ax, 
+        color=ORANGE, 
+        linewidth=2.5, 
+        label=method_name
     )
 
     ax.set_xlabel("Compressibility score", labelpad=10)
-    ax.set_ylabel("Number of windows per bin", labelpad=10)
+    ax.set_ylabel("Density", labelpad=10) # Đổi thành Density khi dùng KDE
 
     ax.grid(True, linewidth=0.6, alpha=0.25)
     ax.legend(
-    loc="upper center",
-    bbox_to_anchor=(0.5, 1.10),
-    ncol=2,
-    frameon=False
-)
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.10),
+        ncol=2,
+        frameon=False
+    )
 
     fig.subplots_adjust(
-    left=0.14,
-    right=0.96,
-    bottom=0.16,
-    top=0.88
-)
+        left=0.14,
+        right=0.96,
+        bottom=0.16,
+        top=0.88
+    )
 
-    fig.savefig(out / "compress_score_hist.pdf", bbox_inches="tight", pad_inches=0.12)
-    fig.savefig(out / "compress_score_hist.png", dpi=300, bbox_inches="tight", pad_inches=0.12)
+    # Lưu với tên file mới để phân biệt
+    fig.savefig(out / "compress_score_line.pdf", bbox_inches="tight", pad_inches=0.12)
+    fig.savefig(out / "compress_score_line.png", dpi=300, bbox_inches="tight", pad_inches=0.12)
     plt.close(fig)
 
 
@@ -419,7 +412,7 @@ def main():
     # Save figures
     set_plot_style()
     plot_roc(out, fpr, tpr, corrected_auc)
-    plot_score_hist(out, legit_scores, covert_scores, args.name)
+    plot_score_line(out, legit_scores, covert_scores, args.name)
 
     print("=== Compressibility result ===")
     print(f"legit file              : {args.legit}")

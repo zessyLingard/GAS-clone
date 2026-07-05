@@ -6,9 +6,10 @@ from pathlib import Path
 
 
 FILES = {
-    "Original": "data/labnet/fixed_big.csv",
-    "Fuzzy": "data/labnet/wendzel_tau150ms_big.csv",
+    "Fixed-IPD": "data/labnet/fixed_big.csv",
+    "Fuzziness injection": "data/labnet/wendzel_tau150ms_big.csv",
     "RATM": "data/labnet/ratm.csv",
+    "LEGIT": "data/bignet/vpn.csv"
 }
 
 OUT_DIR = Path("figures")
