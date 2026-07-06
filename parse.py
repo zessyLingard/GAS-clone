@@ -1,21 +1,27 @@
-import re
-import json
+import pandas as pd
 
-# Read the file as raw text
-with open("manipulate/bignet/legit_discretized.json", "r") as f:
-    content = f.read()
+INPUT_FILE = "data/bignet/vpn.csv"
 
-# Replace np.float64(15.0) → 15.0
-content = re.sub(r'np\.float64\((.*?)\)', r'\1', content)
+REMOVE_FIRST = 100000
+TEST_SIZE = 400000
+TRAIN_SIZE = 1530000
+VAL_SIZE = 170000
 
-# Convert single quotes to double quotes (if needed)
-content = content.replace("'", '"')
+df = pd.read_csv(INPUT_FILE)
 
-# Load as proper JSON
-data = json.loads(content)
+# Bỏ 100k đầu
+df = df.iloc[REMOVE_FIRST:].reset_index(drop=True)
 
-# Save cleaned JSON
-with open("legit_discretized.json", "w") as f:
-    json.dump(data, f)
+# Chia dữ liệu
+test_df = df.iloc[:TEST_SIZE]
+train_df = df.iloc[TEST_SIZE:TEST_SIZE + TRAIN_SIZE]
+val_df = df.iloc[TEST_SIZE + TRAIN_SIZE:TEST_SIZE + TRAIN_SIZE + VAL_SIZE]
 
-print("Conversion complete. Saved as legit_clean.json")
+# Lưu
+test_df.to_csv("vpn_test.csv", index=False)
+train_df.to_csv("vpn_train.csv", index=False)
+val_df.to_csv("vpn_validation.csv", index=False)
+
+print(f"Train      : {len(train_df):,}")
+print(f"Validation : {len(val_df):,}")
+print(f"Test       : {len(test_df):,}")
