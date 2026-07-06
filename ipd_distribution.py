@@ -9,7 +9,8 @@ FILES = {
     "Fixed-IPD": "data/labnet/fixed_big.csv",
     "Fuzziness injection": "data/labnet/wendzel_tau150ms_big.csv",
     "RATM": "data/labnet/ratm.csv",
-    "LEGIT": "data/bignet/vpn.csv"
+    "LEGIT": "data/bignet/vpn.csv",
+    "HTTP": "data/bignet/http.csv"
 }
 
 OUT_DIR = Path("figures")

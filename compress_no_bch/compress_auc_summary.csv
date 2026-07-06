@@ -1,0 +1,2 @@
+method,legit_csv,covert_csv,unit,window_size,legit_ipds_before_drop,covert_ipds_before_drop,legit_ipds_after_drop_gt_1s,covert_ipds_after_drop_gt_1s,used_windows_per_class,mixed_total_windows,compressibility_auc_raw,compressibility_auc_corrected,legit_score_mean,legit_score_std,No_BCH_score_mean,No_BCH_score_std
+No_BCH,data/bignet/vpn.csv,data/labnet/no_bch.csv,s,510,1791321,37600,1791152,37600,73,146,0.6126853068117846,0.6126853068117846,2.41861638814412,0.12615855071520218,2.4450117799874485,0.03082824847891799

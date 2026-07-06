@@ -1,0 +1,2 @@
+method,legit_csv,covert_csv,unit,window_size,legit_ipds_before_drop,covert_ipds_before_drop,legit_ipds_after_drop_gt_1s,covert_ipds_after_drop_gt_1s,used_windows_per_class,mixed_total_windows,compressibility_auc_raw,compressibility_auc_corrected,legit_score_mean,legit_score_std,aes_BCH_score_mean,aes_BCH_score_std
+aes_BCH,data/bignet/vpn.csv,data/labnet/aes_bch.csv,s,510,1791321,51000,1791152,51000,100,200,0.60415,0.60415,2.4190166566177016,0.1237562444615598,2.4447499854347043,0.032919297602028094
