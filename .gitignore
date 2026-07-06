@@ -3,3 +3,7 @@ __pycache__/
 results/
 decoded/
 *.pyc
+compress_*/
+compress/
+figures*/
+figures/
